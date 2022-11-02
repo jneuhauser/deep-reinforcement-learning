@@ -14,3 +14,4 @@ seaborn
 pandas
 scipy
 ipykernel
+pyglet<2
