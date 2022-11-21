@@ -46,6 +46,12 @@ class Agent():
         self.critic_target = Critic(state_size, action_size, random_seed).to(device)
         self.critic_optimizer = optim.Adam(self.critic_local.parameters(), lr=LR_CRITIC, weight_decay=WEIGHT_DECAY)
 
+        # We initialize the target networks as copies of the original networks
+        for target_param, param in zip(self.actor_target.parameters(), self.actor_local.parameters()):
+            target_param.data.copy_(param.data)
+        for target_param, param in zip(self.critic_target.parameters(), self.critic_local.parameters()):
+            target_param.data.copy_(param.data)
+
         # Noise process
         self.noise = OUNoise((num_agents, action_size), random_seed)
 
