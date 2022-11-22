@@ -3,3 +3,7 @@ matplotlib
 notebook
 numpy
 torch
+tensorboardX
+progressbar
+imageio
+scipy
