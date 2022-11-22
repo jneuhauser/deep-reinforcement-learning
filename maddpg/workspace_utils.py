@@ -4,7 +4,7 @@ from contextlib import contextmanager
 
 import requests
 
-
+ENABLED = False
 DELAY = INTERVAL = 4 * 60  # interval time in seconds
 MIN_DELAY = MIN_INTERVAL = 2 * 60
 KEEPALIVE_URL = "https://nebula.udacity.com/api/v1/remote/keep-alive"
@@ -51,4 +51,8 @@ def keep_awake(iterable, delay=DELAY, interval=INTERVAL):
     for i in keep_awake(range(5)):
         # do iteration with lots of work here
     """
-    with active_session(delay, interval): yield from iterable
+    if ENABLED:
+        with active_session(delay, interval): yield from iterable
+    else:
+        print("Not using the Udacity workspace keep awake util")
+        yield from iterable
