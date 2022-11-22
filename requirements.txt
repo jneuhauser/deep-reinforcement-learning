@@ -1,5 +1,13 @@
-gym[box2d]
+gym[box2d]<0.26
 matplotlib
 notebook
 numpy
 torch
+tensorboard
+tensorboardX
+progressbar
+imageio
+scipy
+requests
+pyglet<1.4
+tqdm

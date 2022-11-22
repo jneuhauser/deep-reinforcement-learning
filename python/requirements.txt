@@ -9,10 +9,15 @@ pyyaml
 protobuf==3.5.2
 grpcio==1.11.0
 torch==1.0.0
-gym==0.9.6
 gym[box2d]==0.9.6
 seaborn
 pandas
 scipy
 ipykernel
-pyglet<2
+pyglet<1.4
+tensorboard
+tensorboardX
+progressbar
+imageio
+requests
+tqdm
