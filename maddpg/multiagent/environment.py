@@ -12,7 +12,7 @@ class MultiAgentEnv(gym.Env):
     }
 
     def __init__(self, world, reset_callback=None, reward_callback=None,
-                 observation_callback=None, observation_full_callback=None, info_callback=None,
+                 observation_callback=None, info_callback=None,
                  done_callback=None, shared_viewer=True):
 
         self.world = world
@@ -23,11 +23,10 @@ class MultiAgentEnv(gym.Env):
         self.reset_callback = reset_callback
         self.reward_callback = reward_callback
         self.observation_callback = observation_callback
-        self.observation_full_callback = observation_full_callback
         self.info_callback = info_callback
         self.done_callback = done_callback
         # environment parameters
-        self.discrete_action_space = False
+        self.discrete_action_space = True
         # if true, action is a number 0...N, otherwise action is a one-hot N-dimensional vector
         self.discrete_action_input = False
         # if true, even the action is continuous, action will be performed discretely
@@ -87,8 +86,6 @@ class MultiAgentEnv(gym.Env):
         # set action for each agent
         for i, agent in enumerate(self.agents):
             self._set_action(action_n[i], agent, self.action_space[i])
-            
-        obs_full = self._get_obs(agent=None)
         # advance world state
         self.world.step()
         # record observation for each agent
@@ -104,7 +101,7 @@ class MultiAgentEnv(gym.Env):
         if self.shared_reward:
             reward_n = [reward] * self.n
 
-        return obs_n, obs_full, reward_n, done_n, info_n
+        return obs_n, reward_n, done_n, info_n
 
     def reset(self):
         # reset world
@@ -116,10 +113,7 @@ class MultiAgentEnv(gym.Env):
         self.agents = self.world.policy_agents
         for agent in self.agents:
             obs_n.append(self._get_obs(agent))
-            
-        obs_full = self._get_obs(agent=None)
-
-        return obs_n, obs_full
+        return obs_n
 
     # get info used for benchmarking
     def _get_info(self, agent):
@@ -133,13 +127,6 @@ class MultiAgentEnv(gym.Env):
             return np.zeros(0)
         return self.observation_callback(agent, self.world)
 
-    # get full observation
-    def _get_obs_full(self):
-        if self.observation_full_callback is None:
-            return np.zeros(0)
-        return self.observation_full_callback(self.world)
-
-    
     # get dones for a particular agent
     # unused right now -- agents are allowed to go beyond the viewing screen
     def _get_done(self, agent):
@@ -188,7 +175,7 @@ class MultiAgentEnv(gym.Env):
                     agent.action.u[1] += action[0][3] - action[0][4]
                 else:
                     agent.action.u = action[0]
-            sensitivity = 1.0
+            sensitivity = 5.0
             if agent.accel is not None:
                 sensitivity = agent.accel
             agent.action.u *= sensitivity

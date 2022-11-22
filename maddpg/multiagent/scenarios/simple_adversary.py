@@ -1,8 +1,6 @@
 import numpy as np
 from multiagent.core import World, Agent, Landmark
 from multiagent.scenario import BaseScenario
-from scipy.stats import truncnorm
-
 
 
 class Scenario(BaseScenario):
@@ -22,14 +20,14 @@ class Scenario(BaseScenario):
             agent.collide = False
             agent.silent = True
             agent.adversary = True if i < num_adversaries else False
-            agent.size = 0.05
+            agent.size = 0.15
         # add landmarks
         world.landmarks = [Landmark() for i in range(num_landmarks)]
         for i, landmark in enumerate(world.landmarks):
             landmark.name = 'landmark %d' % i
             landmark.collide = False
             landmark.movable = False
-            landmark.size = 0.06
+            landmark.size = 0.08
         # make initial conditions
         self.reset_world(world)
         return world
@@ -39,8 +37,6 @@ class Scenario(BaseScenario):
         world.agents[0].color = np.array([0.85, 0.35, 0.35])
         for i in range(1, world.num_agents):
             world.agents[i].color = np.array([0.35, 0.35, 0.85])
-            
-            
         # random properties for landmarks
         for i, landmark in enumerate(world.landmarks):
             landmark.color = np.array([0.15, 0.15, 0.15])
@@ -49,20 +45,13 @@ class Scenario(BaseScenario):
         goal.color = np.array([0.15, 0.65, 0.15])
         for agent in world.agents:
             agent.goal_a = goal
-            
         # set random initial states
-        good_agent_indices = []
-        for i,agent in enumerate(world.agents):
+        for agent in world.agents:
             agent.state.p_pos = np.random.uniform(-1, +1, world.dim_p)
             agent.state.p_vel = np.zeros(world.dim_p)
             agent.state.c = np.zeros(world.dim_c)
-            if not agent.adversary:
-                good_agent_indices.append(i)
-        np.random.shuffle(good_agent_indices)
-        world.random_good_agent_indices = good_agent_indices
-        #random_flip = np.random.choice([-1,1],size=world.dim_p)
         for i, landmark in enumerate(world.landmarks):
-            landmark.state.p_pos = np.random.uniform(-0.6, +0.6, world.dim_p)
+            landmark.state.p_pos = np.random.uniform(-1, +1, world.dim_p)
             landmark.state.p_vel = np.zeros(world.dim_p)
 
     def benchmark_data(self, agent, world):
@@ -128,52 +117,23 @@ class Scenario(BaseScenario):
                 adv_rew += 5
             return adv_rew
 
-    
-    def observation(self, agent, world):
-        # if no agent, return all info
-        if agent is None:
-            full_state = []
-            # common goal
-            # we fix that as the origin
-            goal = world.agents[0].goal_a
-                        
-            for entity in world.landmarks:
-                if not (entity == goal):
-                    full_state.append(entity.state.p_pos - goal.state.p_pos)
-                    
-            for other in world.agents:
-                full_state.append(other.state.p_pos - goal.state.p_pos)
-                full_state.append(other.state.p_vel)
 
-            return np.concatenate(full_state)
-        
+    def observation(self, agent, world):
         # get positions of all entities in this agent's reference frame
         entity_pos = []
-        
-        if not agent.adversary:
-            entity_pos.append(agent.goal_a.state.p_pos - agent.state.p_pos)
-            
         for entity in world.landmarks:
-            # for good agent, the first entry is the goal
-            if entity == agent.goal_a and not agent.adversary:
-                continue
             entity_pos.append(entity.state.p_pos - agent.state.p_pos)
-
+        # entity colors
+        entity_color = []
+        for entity in world.landmarks:
+            entity_color.append(entity.color)
         # communication of all other agents
-        other_pos = [ agent.state.p_vel ]
-        
+        other_pos = []
+        for other in world.agents:
+            if other is agent: continue
+            other_pos.append(other.state.p_pos - agent.state.p_pos)
+
         if not agent.adversary:
-            for other in world.agents:
-                if other is agent: continue
-                other_pos.append(other.state.p_pos - agent.state.p_pos)
-                other_pos.append(other.state.p_vel)
-                
+            return np.concatenate([agent.goal_a.state.p_pos - agent.state.p_pos] + entity_pos + other_pos)
         else:
-            for index in world.random_good_agent_indices:
-                other = world.agents[index]
-                other_pos.append(other.state.p_pos - agent.state.p_pos)
-                other_pos.append(other.state.p_vel)
-
-        observation = np.concatenate(entity_pos + other_pos)
-
-        return observation
+            return np.concatenate(entity_pos + other_pos)
