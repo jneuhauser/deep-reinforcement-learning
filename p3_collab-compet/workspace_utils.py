@@ -1,4 +1,5 @@
 import signal
+import os
 
 from contextlib import contextmanager
 
@@ -17,29 +18,37 @@ def _request_handler(headers):
         requests.request("POST", KEEPALIVE_URL, headers=headers)
     return _handler
 
+# Check if we are on a Udacity Jupyter notebook instance
+if os.environ.get("JUPYTER_SERVER_ROOT") == "/home/workspace":
+    @contextmanager
+    def active_session(delay=DELAY, interval=INTERVAL):
+        """
+        Example:
 
-@contextmanager
-def active_session(delay=DELAY, interval=INTERVAL):
-    """
-    Example:
+        from workspace_utils import active_session
 
-    from workspace_utils import active_session
-
-    with active_session():
-        # do long-running work here
-    """
-    token = requests.request("GET", TOKEN_URL, headers=TOKEN_HEADERS).text
-    headers = {'Authorization': "STAR " + token}
-    delay = max(delay, MIN_DELAY)
-    interval = max(interval, MIN_INTERVAL)
-    original_handler = signal.getsignal(signal.SIGALRM)
-    try:
-        signal.signal(signal.SIGALRM, _request_handler(headers))
-        signal.setitimer(signal.ITIMER_REAL, delay, interval)
-        yield
-    finally:
-        signal.signal(signal.SIGALRM, original_handler)
-        signal.setitimer(signal.ITIMER_REAL, 0)
+        with active_session():
+            # do long-running work here
+        """
+        token = requests.request("GET", TOKEN_URL, headers=TOKEN_HEADERS).text
+        headers = {'Authorization': "STAR " + token}
+        delay = max(delay, MIN_DELAY)
+        interval = max(interval, MIN_INTERVAL)
+        original_handler = signal.getsignal(signal.SIGALRM)
+        try:
+            signal.signal(signal.SIGALRM, _request_handler(headers))
+            signal.setitimer(signal.ITIMER_REAL, delay, interval)
+            yield
+        finally:
+            signal.signal(signal.SIGALRM, original_handler)
+            signal.setitimer(signal.ITIMER_REAL, 0)
+else:
+    @contextmanager
+    def active_session(delay=DELAY, interval=INTERVAL):
+        try:
+            yield
+        finally:
+            pass
 
 
 def keep_awake(iterable, delay=DELAY, interval=INTERVAL):
