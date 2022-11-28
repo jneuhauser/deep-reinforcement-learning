@@ -47,10 +47,8 @@ class Agent():
         self.critic_optimizer = optim.Adam(self.critic_local.parameters(), lr=LR_CRITIC, weight_decay=WEIGHT_DECAY)
 
         # We initialize the target networks as copies of the original networks
-        for target_param, param in zip(self.actor_target.parameters(), self.actor_local.parameters()):
-            target_param.data.copy_(param.data)
-        for target_param, param in zip(self.critic_target.parameters(), self.critic_local.parameters()):
-            target_param.data.copy_(param.data)
+        self.hard_update(self.actor_target, self.actor_local)
+        self.hard_update(self.critic_target, self.critic_local)
 
         # Noise process
         self.noise = OUNoise((num_agents, action_size), random_seed)
@@ -124,6 +122,18 @@ class Agent():
         # ----------------------- update target networks ----------------------- #
         self.soft_update(self.critic_local, self.critic_target, TAU)
         self.soft_update(self.actor_local, self.actor_target, TAU)
+
+    def hard_update(self, local_model, target_model):
+        """Hard update model parameters.
+        θ_target = θ_local
+
+        Params
+        ======
+            local_model: PyTorch model (weights will be copied from)
+            target_model: PyTorch model (weights will be copied to)
+        """
+        for target_param, local_param in zip(target_model.parameters(), local_model.parameters()):
+            target_param.data.copy_(local_param.data)
 
     def soft_update(self, local_model, target_model, tau):
         """Soft update model parameters.
